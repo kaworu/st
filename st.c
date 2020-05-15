@@ -121,6 +121,7 @@ typedef struct {
 	Line *alt;    /* alternate screen */
 	Line hist[HISTSIZE]; /* history buffer */
 	int histi;    /* history index */
+	int histf;    /* 1 if hist is full */
 	int scr;      /* scroll back */
 	int *dirty;   /* dirtyness of lines */
 	TCursor c;    /* cursor */
@@ -1121,6 +1122,9 @@ kscrollup(const Arg* a)
 	if (n < 0)
 		n = term.row + n;
 
+	if (!term.histf)
+		n = MIN(n, term.histi - term.scr);
+
 	if (term.scr <= HISTSIZE-n) {
 		term.scr += n;
 		selscroll(0, n);
@@ -1166,6 +1170,8 @@ tscrollup(int orig, int n, int copyhist)
 
 	if (copyhist) {
 		term.histi = (term.histi + 1) % HISTSIZE;
+		if (term.histi == 0)
+			term.histf = 1;
 		temp = term.hist[term.histi];
 		term.hist[term.histi] = term.line[orig];
 		term.line[orig] = temp;
